@@ -1,0 +1,1509 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    <title>AI Medical Consultation Platform - Demo</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .header {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            margin-bottom: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            color: #667eea;
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            color: #666;
+            font-size: 1.1em;
+        }
+
+        .main-content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+        }
+
+        .card {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+
+        .card h2 {
+            color: #667eea;
+            margin-bottom: 20px;
+            font-size: 1.8em;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #333;
+            font-weight: 600;
+        }
+
+        textarea {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 16px;
+            font-family: inherit;
+            resize: vertical;
+            min-height: 150px;
+            transition: border-color 0.3s;
+        }
+
+        textarea:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 10px;
+        }
+
+        button {
+            flex: 1;
+            padding: 15px 30px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        button:hover {
+            background: #5568d3;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        button.secondary {
+            background: #764ba2;
+        }
+
+        button.secondary:hover {
+            background: #653a8a;
+        }
+
+        .results {
+            margin-top: 20px;
+        }
+
+        .result-section {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+        }
+
+        .result-section h3 {
+            color: #667eea;
+            margin-bottom: 15px;
+            font-size: 1.3em;
+        }
+
+        .symptom-item {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            border-left: 4px solid #667eea;
+        }
+
+        .symptom-name {
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 8px;
+        }
+
+        .symptom-details {
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+
+        .detail-item {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .severity-bar {
+            width: 100px;
+            height: 8px;
+            background: #e0e0e0;
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .severity-fill {
+            height: 100%;
+            transition: width 0.3s;
+        }
+
+        .severity-low { background: #4caf50; }
+        .severity-medium { background: #ff9800; }
+        .severity-high { background: #f44336; }
+
+        .badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 0.85em;
+            font-weight: 600;
+        }
+
+        .badge-success { background: #e8f5e9; color: #4caf50; }
+        .badge-warning { background: #fff3e0; color: #ff9800; }
+        .badge-danger { background: #ffebee; color: #f44336; }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #667eea;
+        }
+
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .error {
+            background: #ffebee;
+            color: #c62828;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+        }
+
+        .success {
+            background: #e8f5e9;
+            color: #2e7d32;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+        }
+
+        .examples {
+            margin-top: 20px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 8px;
+        }
+
+        .examples h4 {
+            color: #667eea;
+            margin-bottom: 10px;
+        }
+
+        .example-btn {
+            display: inline-block;
+            padding: 8px 15px;
+            background: white;
+            border: 2px solid #667eea;
+            color: #667eea;
+            border-radius: 6px;
+            margin: 5px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.3s;
+        }
+
+        .example-btn:hover {
+            background: #667eea;
+            color: white;
+        }
+
+        .upload-area {
+            border: 3px dashed #667eea;
+            border-radius: 12px;
+            padding: 40px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+            background: #f8f9fa;
+        }
+
+        .upload-area:hover {
+            background: #e8eaf6;
+            border-color: #5568d3;
+        }
+
+        .upload-area.dragover {
+            background: #e8eaf6;
+            border-color: #5568d3;
+            transform: scale(1.02);
+        }
+
+        .upload-content p {
+            margin: 5px 0;
+        }
+
+        .main-content {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 30px;
+        }
+
+        @media (min-width: 1200px) {
+            .main-content {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .main-content {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .severity-input-section {
+            margin-top: 20px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            display: none;
+        }
+
+        .severity-input-section.active {
+            display: block;
+        }
+
+        .severity-slider-container {
+            margin-bottom: 20px;
+            padding: 15px;
+            background: white;
+            border-radius: 8px;
+            border-left: 4px solid #667eea;
+        }
+
+        .severity-slider-label {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .severity-slider-label strong {
+            color: #333;
+            font-size: 1.1em;
+        }
+
+        .severity-value {
+            font-size: 1.2em;
+            font-weight: bold;
+            padding: 5px 15px;
+            border-radius: 6px;
+            min-width: 60px;
+            text-align: center;
+        }
+
+        .severity-value.low {
+            background: #e8f5e9;
+            color: #4caf50;
+        }
+
+        .severity-value.medium {
+            background: #fff3e0;
+            color: #ff9800;
+        }
+
+        .severity-value.high {
+            background: #ffebee;
+            color: #f44336;
+        }
+
+        input[type="range"] {
+            width: 100%;
+            height: 8px;
+            border-radius: 5px;
+            background: #e0e0e0;
+            outline: none;
+            -webkit-appearance: none;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: #667eea;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        input[type="range"]::-webkit-slider-thumb:hover {
+            background: #5568d3;
+            transform: scale(1.2);
+        }
+
+        input[type="range"]::-moz-range-thumb {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: #667eea;
+            cursor: pointer;
+            border: none;
+            transition: all 0.3s;
+        }
+
+        input[type="range"]::-moz-range-thumb:hover {
+            background: #5568d3;
+            transform: scale(1.2);
+        }
+
+        .severity-scale {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 5px;
+            font-size: 0.85em;
+            color: #666;
+        }
+
+        .toggle-severity-btn {
+            margin-top: 15px;
+            padding: 10px 20px;
+            background: #764ba2;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.3s;
+        }
+
+        .toggle-severity-btn:hover {
+            background: #653a8a;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <div>
+                    <h1>🏥 AI Medical Consultation Platform</h1>
+                    <p>Intelligent Symptom Analysis with Doctor Oversight</p>
+                </div>
+                <div style="display: flex; align-items: center; gap: 15px;">
+                    <span id="userName" style="color: #666; font-weight: 600;">Guest User</span>
+                    <button onclick="handleAuthButton()" id="authButton" style="padding: 8px 20px; background: #667eea; font-size: 14px; width: auto;">Login</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="main-content">
+            <div class="card">
+                <h2>Enter Your Symptoms</h2>
+                
+                <div class="form-group">
+                    <label for="symptoms">Describe your symptoms:</label>
+                    <textarea 
+                        id="symptoms" 
+                        placeholder="Example: I have a headache for 3 days, cough for 2 weeks, and fever since yesterday..."
+                        oninput="detectSymptoms()"
+                    ></textarea>
+                </div>
+
+                <div id="severityInputSection" class="severity-input-section active">
+                    <h4 style="color: #667eea; margin-bottom: 15px;">⚠️ Rate Symptom Severity & Duration - Required</h4>
+                    <div id="severitySliders">
+                        <p style="color: #666; font-style: italic; text-align: center; padding: 20px;">
+                            Type your symptoms above to set severity and duration
+                        </p>
+                    </div>
+                </div>
+
+                <div class="button-group">
+                    <button onclick="analyzeSymptoms()">🔍 Analyze Symptoms</button>
+                    <button class="secondary" onclick="clearForm()">🗑️ Clear</button>
+                </div>
+
+                <div class="examples">
+                    <h4>Try these examples:</h4>
+                    <span class="example-btn" onclick="useExample(1)">Headache</span>
+                    <span class="example-btn" onclick="useExample(2)">Multiple Symptoms</span>
+                    <span class="example-btn" onclick="useExample(3)">Migraine</span>
+                    <span class="example-btn" onclick="useExample(4)">Jaundice</span>
+                    <span class="example-btn" onclick="useExample(5)">Diabetes</span>
+                    <span class="example-btn" onclick="useExample(6)">Dengue</span>
+                    <span class="example-btn" onclick="useExample(7)">Tuberculosis</span>
+                    <span class="example-btn" onclick="useExample(8)">Malaria</span>
+                </div>
+            </div>
+
+            <div class="card" id="uploadCard" style="display: none;">
+                <h2>📄 Upload Blood Report</h2>
+                <p style="color: #666; margin-bottom: 20px;">
+                    Based on your symptoms, we recommend the following tests. Upload your blood test results to get an updated analysis.
+                </p>
+                
+                <div class="form-group">
+                    <label for="bloodReport">Upload your blood test results (PDF, JPG, PNG):</label>
+                    <div class="upload-area" id="uploadArea" onclick="document.getElementById('bloodReport').click()">
+                        <input 
+                            type="file" 
+                            id="bloodReport" 
+                            accept=".pdf,.jpg,.jpeg,.png"
+                            style="display: none;"
+                            onchange="handleFileSelect(event)"
+                        />
+                        <div class="upload-content">
+                            <p style="font-size: 3em; margin-bottom: 10px;">📤</p>
+                            <p><strong>Click to upload</strong> or drag and drop</p>
+                            <p style="font-size: 0.9em; color: #999; margin-top: 10px;">Supports: PDF, JPG, PNG (Max 10MB)</p>
+                        </div>
+                    </div>
+                    <div id="fileInfo" style="display: none; margin-top: 15px; padding: 15px; background: #e8f5e9; border-radius: 8px;">
+                        <p><strong>Selected file:</strong> <span id="fileName"></span></p>
+                        <p><strong>Size:</strong> <span id="fileSize"></span></p>
+                    </div>
+                </div>
+
+                <div class="button-group">
+                    <button onclick="uploadBloodReport()" id="uploadBtn" disabled>📊 Process Report & Re-Analyze</button>
+                    <button class="secondary" onclick="clearUpload()">🗑️ Clear</button>
+                </div>
+
+                <div id="uploadResults" style="margin-top: 20px;"></div>
+            </div>
+
+            <div class="card">
+                <h2>Analysis Results</h2>
+                <div id="results">
+                    <div style="text-align: center; padding: 60px 20px; color: #999;">
+                        <p style="font-size: 3em; margin-bottom: 10px;">🩺</p>
+                        <p>Enter symptoms and click "Analyze" to see results</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <h2>My Consultations</h2>
+                <div id="consultationHistory">
+                    <div style="text-align: center; padding: 40px 20px; color: #999;">
+                        <p>Loading your consultation history...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        console.log('🏥 Medical Consultation Platform - Version 2.0 with Severity Input');
+        // Strict authentication required
+        window.addEventListener('DOMContentLoaded', function() {
+            const user = localStorage.getItem('user');
+            const token = localStorage.getItem('token');
+            
+            // No authentication - redirect to login
+            if (!user || !token) {
+                window.location.replace('/login.html');
+                return;
+            }
+            
+            try {
+                const userData = JSON.parse(user);
+                
+                // Validate user data structure
+                if (!userData.id || !userData.email || !userData.role || !userData.name) {
+                    throw new Error('Invalid user data');
+                }
+                
+                // Redirect doctors to their dashboard
+                if (userData.role === 'doctor') {
+                    window.location.replace('/doctor-dashboard.html');
+                    return;
+                }
+                
+                // Display user name for patients
+                document.getElementById('userName').textContent = `Welcome, ${userData.name}`;
+                document.getElementById('authButton').textContent = 'Logout';
+                document.getElementById('authButton').style.background = '#f44336';
+                
+                // Load consultation history
+                loadConsultationHistory(userData.id);
+            } catch (e) {
+                // Invalid user data - clear and redirect to login
+                console.error('Authentication error:', e);
+                localStorage.clear();
+                window.location.replace('/login.html');
+            }
+        });
+        
+        function handleAuthButton() {
+            const user = localStorage.getItem('user');
+            if (user) {
+                // Logout
+                logout();
+            } else {
+                // Go to login
+                window.location.href = '/login.html';
+            }
+        }
+        
+        async function loadConsultationHistory(patientId) {
+            try {
+                const response = await fetch(`/api/consultations/patient/${patientId}`);
+                const data = await response.json();
+                
+                if (data.success && data.consultations.length > 0) {
+                    displayConsultationHistory(data.consultations);
+                } else {
+                    document.getElementById('consultationHistory').innerHTML = `
+                        <div style="text-align: center; padding: 40px 20px; color: #999;">
+                            <p style="font-size: 2em;">📋</p>
+                            <p>No consultation history yet</p>
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                console.error('Error loading consultations:', error);
+            }
+        }
+        
+        function displayConsultationHistory(consultations) {
+            const container = document.getElementById('consultationHistory');
+            
+            const html = consultations.map(c => {
+                const statusColors = {
+                    pending: '#ff9800',
+                    approved: '#4caf50',
+                    rejected: '#f44336',
+                    completed: '#2196f3'
+                };
+                
+                return `
+                    <div style="border: 2px solid #e0e0e0; border-radius: 10px; padding: 15px; margin-bottom: 15px;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                            <strong style="color: #667eea;">${c.id}</strong>
+                            <span style="background: ${statusColors[c.status]}; color: white; padding: 4px 12px; border-radius: 12px; font-size: 0.85em;">
+                                ${c.status.toUpperCase()}
+                            </span>
+                        </div>
+                        <p><strong>Date:</strong> ${new Date(c.createdAt).toLocaleString()}</p>
+                        <p><strong>Symptoms:</strong> ${c.symptoms.join(', ')}</p>
+                        <p><strong>Diagnosis:</strong> ${c.aiDiagnosis}</p>
+                        <p><strong>Urgency:</strong> ${c.urgency.toUpperCase()}</p>
+                        <div style="margin-top: 10px;">
+                            <button onclick="downloadReport('${c.id}')" style="padding: 8px 15px; background: #667eea; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 14px;">
+                                📄 Download Report
+                            </button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+            
+            container.innerHTML = html;
+        }
+        
+        function downloadReport(consultationId) {
+            window.open(`/api/consultations/${consultationId}/report?format=html`, '_blank');
+        }
+        
+        function logout() {
+            localStorage.clear();
+            sessionStorage.clear();
+            window.location.href = '/login.html';
+        }
+        
+        const examples = {
+            1: "I have a severe headache that started 3 days ago. The pain is 8/10.",
+            2: "I have a mild cough for 2 weeks, severe chest pain since yesterday, and moderate fever",
+            3: "For the past week, I have had an unbearable headache (9/10 pain), severe nausea, mild fever around 100°F, and extreme sensitivity to light.",
+            4: "I have yellow skin and yellow eyes (jaundice) for 5 days, along with dark urine, fatigue, and abdominal pain",
+            5: "I have diabetes symptoms: excessive thirst, frequent urination, unexplained weight loss, and fatigue for 2 weeks",
+            6: "I have dengue symptoms: high fever, severe body aches, joint pain, rash, and bleeding gums for 4 days",
+            7: "I have tuberculosis symptoms: persistent cough for 3 weeks, coughing blood, night sweats, weight loss, and chest pain",
+            8: "I have malaria symptoms: high fever with chills, sweating, headache, nausea, and body aches recurring every 2 days"
+        };
+
+        // Store detected symptoms, their custom severities, and durations
+        let detectedSymptoms = [];
+        let customSeverities = {};
+        let customDurations = {};
+
+        // Comprehensive global disease symptoms - 200+ symptoms
+        const symptomKeywords = [
+            // General symptoms
+            'headache', 'head pain', 'migraine', 'fever', 'high temperature', 'chills', 
+            'fatigue', 'weakness', 'tiredness', 'exhaustion', 'malaise', 'lethargy',
+            'dizziness', 'vertigo', 'lightheadedness', 'fainting', 'syncope',
+            'sweating', 'night sweats', 'weight loss', 'weight gain', 'loss of appetite',
+            'increased appetite', 'dehydration', 'swelling', 'edema', 'bloating',
+            
+            // Pain symptoms
+            'chest pain', 'abdominal pain', 'stomach pain', 'belly pain', 'pelvic pain',
+            'back pain', 'lower back pain', 'upper back pain', 'neck pain', 'shoulder pain',
+            'joint pain', 'muscle pain', 'body aches', 'cramps', 'spasms',
+            'burning sensation', 'sharp pain', 'dull pain', 'throbbing pain',
+            
+            // Respiratory symptoms
+            'cough', 'dry cough', 'wet cough', 'productive cough', 'shortness of breath',
+            'difficulty breathing', 'breathlessness', 'wheezing', 'chest tightness',
+            'rapid breathing', 'shallow breathing', 'hyperventilation', 'sneezing',
+            'runny nose', 'stuffy nose', 'nasal congestion', 'sinus pressure',
+            'sore throat', 'throat pain', 'hoarseness', 'loss of voice', 'coughing blood',
+            'hemoptysis', 'pneumonia', 'tuberculosis', 'asthma', 'bronchitis',
+            
+            // Digestive symptoms
+            'nausea', 'vomiting', 'throwing up', 'diarrhea', 'loose stools', 'watery stools',
+            'constipation', 'bloating', 'gas', 'flatulence', 'heartburn', 'acid reflux',
+            'indigestion', 'stomach upset', 'cramping', 'abdominal cramps',
+            'blood in stool', 'black stool', 'bloody stool', 'rectal bleeding',
+            'loss of appetite', 'difficulty swallowing', 'dysphagia', 'gastritis',
+            'ulcer', 'appendicitis', 'gallstones', 'liver pain', 'hepatitis',
+            
+            // Skin symptoms & Dermatological
+            'rash', 'skin rash', 'hives', 'itching', 'itchy skin', 'dry skin',
+            'red skin', 'redness', 'swelling', 'bumps', 'blisters', 'sores',
+            'bruising', 'discoloration', 'pale skin', 'yellowing', 'jaundice',
+            'yellow skin', 'yellow eyes', 'skin lesions', 'acne', 'boils',
+            'eczema', 'psoriasis', 'dermatitis', 'fungal infection', 'ringworm',
+            'scabies', 'measles', 'chickenpox', 'shingles', 'herpes', 'warts',
+            
+            // Neurological symptoms
+            'confusion', 'disorientation', 'memory loss', 'forgetfulness',
+            'numbness', 'tingling', 'pins and needles', 'tremors', 'shaking',
+            'seizures', 'convulsions', 'loss of consciousness', 'blurred vision',
+            'double vision', 'vision changes', 'sensitivity to light', 'photophobia',
+            'hearing loss', 'ringing in ears', 'tinnitus', 'balance problems',
+            'paralysis', 'stroke', 'meningitis', 'encephalitis', 'alzheimer',
+            'parkinson', 'multiple sclerosis', 'neuropathy', 'migraine aura',
+            
+            // Cardiovascular symptoms
+            'palpitations', 'rapid heartbeat', 'irregular heartbeat', 'slow heartbeat',
+            'chest pressure', 'chest discomfort', 'racing heart', 'fluttering heart',
+            'high blood pressure', 'low blood pressure', 'cold hands', 'cold feet',
+            'heart attack', 'angina', 'heart failure', 'arrhythmia', 'hypertension',
+            'hypotension', 'varicose veins', 'deep vein thrombosis', 'dvt',
+            
+            // Urinary & Kidney symptoms
+            'frequent urination', 'painful urination', 'burning urination', 'blood in urine',
+            'dark urine', 'cloudy urine', 'difficulty urinating', 'urinary incontinence',
+            'urgency to urinate', 'decreased urination', 'kidney pain', 'flank pain',
+            'kidney stones', 'uti', 'urinary tract infection', 'bladder infection',
+            'kidney infection', 'renal failure', 'nephritis', 'proteinuria',
+            
+            // Musculoskeletal symptoms
+            'stiffness', 'joint stiffness', 'muscle stiffness', 'limited mobility',
+            'swollen joints', 'joint swelling', 'muscle weakness', 'difficulty walking',
+            'limping', 'bone pain', 'fracture', 'sprain', 'strain', 'arthritis',
+            'rheumatoid arthritis', 'osteoarthritis', 'gout', 'osteoporosis',
+            'fibromyalgia', 'tendonitis', 'bursitis', 'carpal tunnel',
+            
+            // Infectious disease symptoms
+            'sore throat', 'swollen glands', 'swollen lymph nodes', 'enlarged lymph nodes',
+            'body aches', 'chills and fever', 'cold symptoms', 'flu symptoms',
+            'congestion', 'mucus', 'phlegm', 'post-nasal drip', 'malaria',
+            'dengue', 'typhoid', 'cholera', 'hiv', 'aids', 'covid', 'coronavirus',
+            'ebola', 'zika', 'lyme disease', 'rabies', 'tetanus', 'sepsis',
+            
+            // Endocrine & Metabolic
+            'diabetes', 'high blood sugar', 'low blood sugar', 'hypoglycemia', 'hyperglycemia',
+            'thyroid problems', 'hyperthyroidism', 'hypothyroidism', 'goiter',
+            'excessive thirst', 'frequent hunger', 'hormonal imbalance',
+            'cushings syndrome', 'addisons disease', 'metabolic syndrome',
+            
+            // Cancer symptoms
+            'lump', 'mass', 'tumor', 'unexplained weight loss', 'persistent cough',
+            'blood in sputum', 'change in bowel habits', 'unusual bleeding',
+            'persistent pain', 'skin changes', 'mole changes', 'lymphoma',
+            'leukemia', 'carcinoma', 'sarcoma', 'melanoma',
+            
+            // Mental health symptoms
+            'anxiety', 'nervousness', 'panic', 'depression', 'sadness', 'mood changes',
+            'irritability', 'restlessness', 'insomnia', 'sleep problems', 'nightmares',
+            'bipolar', 'schizophrenia', 'ptsd', 'ocd', 'adhd', 'autism',
+            'eating disorder', 'anorexia', 'bulimia', 'suicidal thoughts',
+            
+            // Eye symptoms
+            'eye pain', 'red eyes', 'watery eyes', 'dry eyes', 'itchy eyes',
+            'discharge from eyes', 'vision loss', 'blind spots', 'floaters',
+            'cataracts', 'glaucoma', 'conjunctivitis', 'pink eye', 'stye',
+            
+            // Ear, Nose, Throat
+            'ear pain', 'earache', 'ear discharge', 'ear infection', 'otitis',
+            'sinusitis', 'rhinitis', 'tonsillitis', 'laryngitis', 'pharyngitis',
+            'nasal polyps', 'deviated septum', 'nosebleed', 'epistaxis',
+            
+            // Reproductive health
+            'vaginal discharge', 'penile discharge', 'painful intercourse',
+            'irregular periods', 'heavy bleeding', 'missed period', 'amenorrhea',
+            'pelvic inflammatory disease', 'endometriosis', 'pcos', 'fibroids',
+            'erectile dysfunction', 'infertility', 'std', 'sexually transmitted',
+            
+            // Blood disorders
+            'anemia', 'iron deficiency', 'hemophilia', 'thrombocytopenia',
+            'bleeding disorder', 'clotting disorder', 'sickle cell', 'thalassemia',
+            
+            // Autoimmune diseases
+            'lupus', 'celiac disease', 'crohns disease', 'ulcerative colitis',
+            'inflammatory bowel disease', 'ibd', 'multiple sclerosis', 'ms',
+            'rheumatoid arthritis', 'ra', 'type 1 diabetes', 'graves disease',
+            
+            // Other specific symptoms
+            'bleeding', 'bruising easily', 'nosebleeds', 'gum bleeding',
+            'hair loss', 'brittle nails', 'mouth sores', 'ulcers', 'canker sores',
+            'bad breath', 'metallic taste', 'loss of taste', 'loss of smell',
+            'anosmia', 'ageusia', 'bell palsy', 'facial paralysis'
+        ];
+
+        function detectSymptoms() {
+            console.log('🔍 Detecting symptoms...');
+            const text = document.getElementById('symptoms').value.toLowerCase();
+            const found = [];
+            
+            symptomKeywords.forEach(symptom => {
+                if (text.includes(symptom)) {
+                    found.push(symptom);
+                }
+            });
+
+            detectedSymptoms = [...new Set(found)]; // Remove duplicates
+            console.log('✓ Found symptoms:', detectedSymptoms);
+            
+            updateSeveritySliders();
+        }
+
+        function toggleSeverityInput() {
+            const section = document.getElementById('severityInputSection');
+            section.classList.toggle('active');
+        }
+
+        function updateSeveritySliders() {
+            const container = document.getElementById('severitySliders');
+            
+            if (detectedSymptoms.length === 0) {
+                container.innerHTML = '<p style="color: #666; font-style: italic; text-align: center; padding: 20px;">Type your symptoms above to set severity and duration</p>';
+                return;
+            }
+            
+            container.innerHTML = '';
+
+            detectedSymptoms.forEach(symptom => {
+                const defaultSeverity = customSeverities[symptom] || 5;
+                const defaultDuration = customDurations[symptom] || '';
+                
+                const sliderDiv = document.createElement('div');
+                sliderDiv.className = 'severity-slider-container';
+                
+                const severityClass = defaultSeverity > 7 ? 'high' : defaultSeverity > 4 ? 'medium' : 'low';
+                const severityLabel = defaultSeverity > 7 ? 'SEVERE' : defaultSeverity > 4 ? 'MODERATE' : 'MILD';
+                
+                sliderDiv.innerHTML = `
+                    <div class="severity-slider-label">
+                        <strong>${symptom.charAt(0).toUpperCase() + symptom.slice(1)}</strong>
+                        <span class="severity-value ${severityClass}" id="value-${symptom.replace(/\s+/g, '-')}">
+                            ${defaultSeverity}/10 - ${severityLabel}
+                        </span>
+                    </div>
+                    <input 
+                        type="range" 
+                        min="0" 
+                        max="10" 
+                        value="${defaultSeverity}" 
+                        id="slider-${symptom.replace(/\s+/g, '-')}"
+                        oninput="updateSeverityValue('${symptom}')"
+                    />
+                    <div class="severity-scale">
+                        <span>0 - None</span>
+                        <span>3 - Mild</span>
+                        <span>5 - Moderate</span>
+                        <span>7 - Severe</span>
+                        <span>10 - Extreme</span>
+                    </div>
+                    <div style="margin-top: 15px;">
+                        <label style="display: block; margin-bottom: 5px; color: #667eea; font-weight: 600;">
+                            ⏱️ Duration: How long have you had this symptom?
+                        </label>
+                        <div style="display: flex; gap: 10px;">
+                            <input 
+                                type="number" 
+                                min="1" 
+                                max="365" 
+                                placeholder="Number"
+                                value="${defaultDuration.split(' ')[0] || ''}"
+                                id="duration-num-${symptom.replace(/\s+/g, '-')}"
+                                oninput="updateDurationValue('${symptom}')"
+                                style="flex: 1; padding: 10px; border: 2px solid #e0e0e0; border-radius: 6px; font-size: 14px;"
+                            />
+                            <select 
+                                id="duration-unit-${symptom.replace(/\s+/g, '-')}"
+                                onchange="updateDurationValue('${symptom}')"
+                                style="flex: 1; padding: 10px; border: 2px solid #e0e0e0; border-radius: 6px; font-size: 14px; background: white;"
+                            >
+                                <option value="hours" ${defaultDuration.includes('hour') ? 'selected' : ''}>Hours</option>
+                                <option value="days" ${defaultDuration.includes('day') ? 'selected' : ''}>Days</option>
+                                <option value="weeks" ${defaultDuration.includes('week') ? 'selected' : ''}>Weeks</option>
+                                <option value="months" ${defaultDuration.includes('month') ? 'selected' : ''}>Months</option>
+                                <option value="years" ${defaultDuration.includes('year') ? 'selected' : ''}>Years</option>
+                            </select>
+                        </div>
+                    </div>
+                `;
+                
+                container.appendChild(sliderDiv);
+            });
+        }
+
+        function updateSeverityValue(symptom) {
+            const sliderId = `slider-${symptom.replace(/\s+/g, '-')}`;
+            const valueId = `value-${symptom.replace(/\s+/g, '-')}`;
+            
+            const slider = document.getElementById(sliderId);
+            const valueDisplay = document.getElementById(valueId);
+            
+            const value = parseInt(slider.value);
+            customSeverities[symptom] = value;
+            
+            const severityClass = value > 7 ? 'high' : value > 4 ? 'medium' : 'low';
+            const severityLabel = value > 7 ? 'SEVERE' : value > 4 ? 'MODERATE' : 'MILD';
+            
+            valueDisplay.className = `severity-value ${severityClass}`;
+            valueDisplay.textContent = `${value}/10 - ${severityLabel}`;
+        }
+
+        function updateDurationValue(symptom) {
+            const numId = `duration-num-${symptom.replace(/\s+/g, '-')}`;
+            const unitId = `duration-unit-${symptom.replace(/\s+/g, '-')}`;
+            
+            const numInput = document.getElementById(numId);
+            const unitSelect = document.getElementById(unitId);
+            
+            const num = numInput.value;
+            const unit = unitSelect.value;
+            
+            if (num && parseInt(num) > 0) {
+                customDurations[symptom] = `${num} ${unit}`;
+                console.log(`✓ Duration set for ${symptom}: ${num} ${unit}`);
+            } else {
+                customDurations[symptom] = '';
+            }
+        }
+
+        function useExample(num) {
+            document.getElementById('symptoms').value = examples[num];
+            detectSymptoms();
+        }
+
+        function clearForm() {
+            document.getElementById('symptoms').value = '';
+            detectedSymptoms = [];
+            customSeverities = {};
+            customDurations = {};
+            document.getElementById('severitySliders').innerHTML = '<p style="color: #666; font-style: italic; text-align: center; padding: 20px;">Type your symptoms above to set severity and duration</p>';
+            document.getElementById('results').innerHTML = `
+                <div style="text-align: center; padding: 60px 20px; color: #999;">
+                    <p style="font-size: 3em; margin-bottom: 10px;">🩺</p>
+                    <p>Enter symptoms and click "Analyze" to see results</p>
+                </div>
+            `;
+            // Hide the upload card when clearing
+            document.getElementById('uploadCard').style.display = 'none';
+        }
+
+        async function analyzeSymptoms() {
+            const symptomsText = document.getElementById('symptoms').value.trim();
+            
+            if (!symptomsText) {
+                showError('Please enter your symptoms');
+                return;
+            }
+
+            // Check if symptoms were detected
+            if (detectedSymptoms.length === 0) {
+                showError('No recognizable symptoms detected. Please use common medical terms like: headache, cough, fever, nausea, etc.');
+                return;
+            }
+
+            // Ensure all detected symptoms have severity ratings
+            const missingSeverities = detectedSymptoms.filter(symptom => customSeverities[symptom] === undefined);
+            if (missingSeverities.length > 0) {
+                // Auto-assign default severity of 5 for any missing
+                missingSeverities.forEach(symptom => {
+                    customSeverities[symptom] = 5;
+                });
+            }
+
+            // Ensure all detected symptoms have durations
+            const missingDurations = detectedSymptoms.filter(symptom => !customDurations[symptom]);
+            if (missingDurations.length > 0) {
+                // Auto-assign default duration
+                missingDurations.forEach(symptom => {
+                    customDurations[symptom] = '1 days';
+                });
+            }
+
+            showLoading();
+
+            try {
+                // Build request with custom severities and durations
+                const requestBody = {
+                    patientId: 'demo-patient',
+                    symptoms: symptomsText,
+                    inputType: 'text',
+                    timestamp: new Date().toISOString(),
+                    customSeverities: customSeverities,
+                    customDurations: customDurations
+                };
+
+                const response = await fetch('/api/analyze', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(requestBody)
+                });
+
+                const data = await response.json();
+                
+                if (data.error) {
+                    showError(data.error);
+                } else {
+                    displayResults(data);
+                }
+            } catch (error) {
+                showError('Error analyzing symptoms. Make sure the server is running.');
+            }
+        }
+
+        function showLoading() {
+            document.getElementById('results').innerHTML = `
+                <div class="loading">
+                    <div class="spinner"></div>
+                    <p>Analyzing your symptoms...</p>
+                </div>
+            `;
+        }
+
+        function showError(message) {
+            document.getElementById('results').innerHTML = `
+                <div class="error">
+                    <strong>⚠️ Error:</strong> ${message}
+                </div>
+            `;
+        }
+
+        function displayResults(data) {
+            let html = '<div class="success">✓ AI Analysis Complete</div>';
+
+            // Show if custom severities were applied
+            if (data.customSeveritiesApplied) {
+                html += '<div style="background: #e8eaf6; color: #5568d3; padding: 12px; border-radius: 8px; margin-bottom: 15px; font-size: 0.95em;">';
+                html += '✓ Custom severity levels applied to analysis';
+                html += '</div>';
+            }
+
+            // Urgency Alert
+            if (data.clinicalReasoning) {
+                const urgency = data.clinicalReasoning.urgencyLevel;
+                const urgencyColors = {
+                    emergency: '#d32f2f',
+                    high: '#f57c00',
+                    medium: '#fbc02d',
+                    low: '#388e3c'
+                };
+                const urgencyLabels = {
+                    emergency: '🚨 EMERGENCY - Seek immediate medical attention',
+                    high: '⚠️ HIGH URGENCY - See a doctor today',
+                    medium: '📋 MODERATE - Schedule appointment soon',
+                    low: '✓ LOW URGENCY - Monitor symptoms'
+                };
+                
+                html += `<div style="background: ${urgencyColors[urgency]}; color: white; padding: 15px; border-radius: 8px; margin-bottom: 15px; font-weight: bold;">
+                    ${urgencyLabels[urgency]}
+                </div>`;
+            }
+
+            // Detected Symptoms
+            html += '<div class="result-section">';
+            html += '<h3>🔍 Detected Symptoms</h3>';
+            
+            if (data.normalizedSymptoms && data.normalizedSymptoms.length > 0) {
+                data.normalizedSymptoms.forEach(symptom => {
+                    const [name, code] = symptom.split('|');
+                    const severity = data.severity[name] || 5;
+                    const duration = data.duration[name] || 'unknown';
+                    
+                    const severityClass = severity > 7 ? 'high' : severity > 4 ? 'medium' : 'low';
+                    const severityLabel = severity > 7 ? 'SEVERE' : severity > 4 ? 'MODERATE' : 'MILD';
+                    const badgeClass = severity > 7 ? 'danger' : severity > 4 ? 'warning' : 'success';
+                    
+                    html += `
+                        <div class="symptom-item">
+                            <div class="symptom-name">${name.toUpperCase()}</div>
+                            <div class="symptom-details">
+                                <div class="detail-item">
+                                    <span>Severity:</span>
+                                    <span class="badge badge-${badgeClass}">${severityLabel} (${severity}/10)</span>
+                                </div>
+                                <div class="detail-item">
+                                    <span>Duration:</span>
+                                    <strong>${duration}</strong>
+                                </div>
+                            </div>
+                            <div class="severity-bar" style="margin-top: 10px;">
+                                <div class="severity-fill severity-${severityClass}" style="width: ${severity * 10}%"></div>
+                            </div>
+                        </div>
+                    `;
+                });
+            } else {
+                html += '<p>No symptoms detected</p>';
+            }
+            
+            html += '</div>';
+
+            // AI Clinical Reasoning
+            if (data.clinicalReasoning) {
+                const reasoning = data.clinicalReasoning;
+                
+                // Reasoning Steps
+                html += '<div class="result-section">';
+                html += '<h3>🤖 AI Clinical Reasoning</h3>';
+                html += `<p style="margin-bottom: 15px;"><strong>Confidence Score:</strong> ${Math.round(reasoning.confidenceScore * 100)}%</p>`;
+                
+                reasoning.reasoningSteps.forEach(step => {
+                    html += `
+                        <div style="background: white; padding: 15px; border-radius: 8px; margin-bottom: 10px; border-left: 4px solid #667eea;">
+                            <div style="font-weight: bold; color: #667eea; margin-bottom: 8px;">
+                                Step ${step.stepNumber}: ${step.observation}
+                            </div>
+                            <div style="margin-bottom: 8px; color: #333;">
+                                ${step.reasoning}
+                            </div>
+                            <div style="font-size: 0.85em; color: #666;">
+                                <strong>References:</strong> ${step.medicalReferences.join('; ')}
+                            </div>
+                            <div style="margin-top: 5px;">
+                                <span class="badge badge-success">Confidence: ${Math.round(step.confidence * 100)}%</span>
+                            </div>
+                        </div>
+                    `;
+                });
+                html += '</div>';
+
+                // Possible Conditions
+                html += '<div class="result-section">';
+                html += '<h3>🏥 Possible Conditions (Differential Diagnosis)</h3>';
+                
+                reasoning.possibleConditions.forEach((condition, index) => {
+                    const probability = Math.round(condition.probability * 100);
+                    const severityBadge = condition.severity === 'severe' ? 'danger' : 
+                                         condition.severity === 'moderate' ? 'warning' : 'success';
+                    
+                    html += `
+                        <div class="symptom-item">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                                <div class="symptom-name">${index + 1}. ${condition.name}</div>
+                                <span class="badge badge-${severityBadge}">${probability}% probability</span>
+                            </div>
+                            <div style="margin-bottom: 8px;">
+                                <strong>Supporting Evidence:</strong>
+                                <ul style="margin: 5px 0 0 20px;">
+                                    ${condition.supportingEvidence.map(e => `<li>${e}</li>`).join('')}
+                                </ul>
+                            </div>
+                            ${condition.contradictingEvidence.length > 0 ? `
+                                <div>
+                                    <strong>Contradicting Evidence:</strong>
+                                    <ul style="margin: 5px 0 0 20px;">
+                                        ${condition.contradictingEvidence.map(e => `<li>${e}</li>`).join('')}
+                                    </ul>
+                                </div>
+                            ` : ''}
+                        </div>
+                    `;
+                });
+                html += '</div>';
+
+                // Recommended Tests
+                html += '<div class="result-section">';
+                html += '<h3>🔬 Recommended Blood Tests</h3>';
+                html += '<p style="margin-bottom: 15px; color: #666; font-style: italic;">These recommendations require doctor approval before ordering.</p>';
+                
+                reasoning.recommendedTests.forEach(test => {
+                    const priorityBadge = test.priority === 'high' ? 'danger' : 
+                                         test.priority === 'medium' ? 'warning' : 'success';
+                    
+                    html += `
+                        <div class="symptom-item">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                                <div class="symptom-name">${test.testName}</div>
+                                <span class="badge badge-${priorityBadge}">${test.priority.toUpperCase()} PRIORITY</span>
+                            </div>
+                            <div class="symptom-details">
+                                <div class="detail-item">
+                                    <span>Est. Cost:</span>
+                                    <strong>${test.estimatedCost}</strong>
+                                </div>
+                            </div>
+                            <div style="margin-top: 10px; padding: 10px; background: #f8f9fa; border-radius: 6px;">
+                                <strong>Rationale:</strong> ${test.rationale}
+                            </div>
+                        </div>
+                    `;
+                });
+                html += '</div>';
+
+                // Disclaimer
+                html += '<div class="result-section" style="background: #fff3e0; border-left: 4px solid #ff9800;">';
+                html += '<h3>⚠️ Important Disclaimer</h3>';
+                html += `<p style="color: #e65100;">${reasoning.disclaimer}</p>`;
+                html += '</div>';
+            }
+
+            // Summary
+            html += '<div class="result-section">';
+            html += '<h3>📊 Summary</h3>';
+            html += `<p><strong>Analysis Date:</strong> ${new Date(data.timestamp).toLocaleString()}</p>`;
+            html += '</div>';
+
+            // Next Steps
+
+            document.getElementById('results').innerHTML = html;
+            
+            // Show the upload card after analysis
+            document.getElementById('uploadCard').style.display = 'block';
+            
+            // Scroll to upload section
+            setTimeout(() => {
+                document.getElementById('uploadCard').scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }, 500);
+        }
+
+        // File upload handling
+        let selectedFile = null;
+
+        function handleFileSelect(event) {
+            const file = event.target.files[0];
+            if (file) {
+                selectedFile = file;
+                
+                // Show file info
+                document.getElementById('fileName').textContent = file.name;
+                document.getElementById('fileSize').textContent = formatFileSize(file.size);
+                document.getElementById('fileInfo').style.display = 'block';
+                document.getElementById('uploadBtn').disabled = false;
+
+                // Update upload area
+                document.querySelector('.upload-content').innerHTML = `
+                    <p style="font-size: 3em; margin-bottom: 10px;">✓</p>
+                    <p><strong>File selected!</strong></p>
+                    <p style="font-size: 0.9em; color: #667eea;">${file.name}</p>
+                `;
+            }
+        }
+
+        function formatFileSize(bytes) {
+            if (bytes < 1024) return bytes + ' B';
+            if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(2) + ' KB';
+            return (bytes / (1024 * 1024)).toFixed(2) + ' MB';
+        }
+
+        function clearUpload() {
+            selectedFile = null;
+            document.getElementById('bloodReport').value = '';
+            document.getElementById('fileInfo').style.display = 'none';
+            document.getElementById('uploadBtn').disabled = true;
+            document.getElementById('uploadResults').innerHTML = '';
+            
+            document.querySelector('.upload-content').innerHTML = `
+                <p style="font-size: 3em; margin-bottom: 10px;">📤</p>
+                <p><strong>Click to upload</strong> or drag and drop</p>
+                <p style="font-size: 0.9em; color: #999; margin-top: 10px;">Supports: PDF, JPG, PNG (Max 10MB)</p>
+            `;
+        }
+
+        async function uploadBloodReport() {
+            if (!selectedFile) {
+                alert('Please select a file first');
+                return;
+            }
+
+            document.getElementById('uploadResults').innerHTML = `
+                <div class="loading">
+                    <div class="spinner"></div>
+                    <p>Processing blood report...</p>
+                    <p style="font-size: 0.9em; color: #999;">Extracting test results using AI...</p>
+                </div>
+            `;
+
+            try {
+                const formData = new FormData();
+                formData.append('file', selectedFile);
+                formData.append('patientId', 'demo-patient');
+                formData.append('consultationId', 'demo-consultation');
+
+                const response = await fetch('/api/upload-report', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const data = await response.json();
+                
+                if (data.error) {
+                    document.getElementById('uploadResults').innerHTML = `
+                        <div class="error">
+                            <strong>⚠️ Error:</strong> ${data.error}
+                        </div>
+                    `;
+                } else {
+                    displayUploadResults(data);
+                }
+            } catch (error) {
+                document.getElementById('uploadResults').innerHTML = `
+                    <div class="error">
+                        <strong>⚠️ Error:</strong> ${error.message}
+                        <p style="margin-top: 10px; font-size: 0.9em;">
+                            Note: Document processing (Amazon Textract) is not yet implemented in this demo.
+                            This feature will be available after deploying to AWS.
+                        </p>
+                    </div>
+                `;
+            }
+        }
+
+        function displayUploadResults(data) {
+            let html = '<div class="success">✓ Blood Report Processed & Analyzed</div>';
+
+            html += '<div class="result-section">';
+            html += '<h3>📋 Document Information</h3>';
+            html += `<p><strong>File Name:</strong> ${data.fileName}</p>`;
+            html += `<p><strong>File Size:</strong> ${formatFileSize(data.fileSize)}</p>`;
+            html += `<p><strong>Upload Time:</strong> ${new Date(data.uploadedAt).toLocaleString()}</p>`;
+            if (data.extractedData && data.extractedData.labName) {
+                html += `<p><strong>Lab:</strong> ${data.extractedData.labName}</p>`;
+            }
+            html += '</div>';
+
+            if (data.extractedData && data.extractedData.testResults) {
+                // Test Results Section
+                html += '<div class="result-section">';
+                html += '<h3>🔬 Blood Test Results Analysis</h3>';
+                
+                let abnormalCount = 0;
+                let normalCount = 0;
+                
+                data.extractedData.testResults.forEach(test => {
+                    const statusClass = test.status === 'normal' ? 'success' : 
+                                      test.status === 'slightly_high' || test.status === 'slightly_low' ? 'warning' : 'danger';
+                    const statusLabel = test.status === 'normal' ? '✓ NORMAL' : 
+                                      test.status === 'slightly_high' ? '⚠️ SLIGHTLY HIGH' :
+                                      test.status === 'slightly_low' ? '⚠️ SLIGHTLY LOW' : '❌ ABNORMAL';
+                    
+                    if (test.status !== 'normal') abnormalCount++;
+                    else normalCount++;
+                    
+                    html += `
+                        <div class="symptom-item" style="border-left: 4px solid ${test.status === 'normal' ? '#4caf50' : test.status.includes('slightly') ? '#ff9800' : '#f44336'};">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                                <div class="symptom-name">${test.name}</div>
+                                <span class="badge badge-${statusClass}">${statusLabel}</span>
+                            </div>
+                            <div class="symptom-details">
+                                <div class="detail-item">
+                                    <span>Your Value:</span>
+                                    <strong style="font-size: 1.1em; color: ${test.status === 'normal' ? '#4caf50' : '#f44336'};">${test.value} ${test.unit}</strong>
+                                </div>
+                                <div class="detail-item">
+                                    <span>Normal Range:</span>
+                                    <strong>${test.normalRange}</strong>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                });
+                
+                html += '</div>';
+                
+                // Summary Statistics
+                html += '<div class="result-section" style="background: #e8f5e9;">';
+                html += '<h3>📊 Test Summary</h3>';
+                html += `<p><strong>Total Tests:</strong> ${data.extractedData.testResults.length}</p>`;
+                html += `<p><strong>Normal Results:</strong> <span style="color: #4caf50; font-weight: bold;">${normalCount}</span></p>`;
+                html += `<p><strong>Abnormal Results:</strong> <span style="color: ${abnormalCount > 0 ? '#f44336' : '#4caf50'}; font-weight: bold;">${abnormalCount}</span></p>`;
+                html += '</div>';
+                
+                // AI Analysis & Recommendations
+                html += '<div class="result-section">';
+                html += '<h3>🤖 AI Analysis & Recommendations</h3>';
+                
+                if (abnormalCount > 0) {
+                    html += '<div style="background: #fff3e0; padding: 15px; border-radius: 8px; margin-bottom: 15px; border-left: 4px solid #ff9800;">';
+                    html += '<p style="color: #e65100; font-weight: bold; margin-bottom: 10px;">⚠️ Attention Required</p>';
+                    html += `<p style="color: #666;">Your blood test shows ${abnormalCount} parameter(s) outside the normal range. This requires medical attention.</p>`;
+                    html += '</div>';
+                    
+                    html += '<h4 style="color: #667eea; margin: 15px 0 10px 0;">Recommended Actions:</h4>';
+                    html += '<ul style="margin-left: 20px; line-height: 1.8;">';
+                    html += '<li><strong>Consult a doctor immediately</strong> to discuss these results</li>';
+                    html += '<li>Bring this report to your consultation</li>';
+                    html += '<li>Follow up with additional tests if recommended</li>';
+                    html += '<li>Do not self-medicate based on these results</li>';
+                    html += '</ul>';
+                    
+                    // Specific recommendations based on abnormal values
+                    html += '<h4 style="color: #667eea; margin: 15px 0 10px 0;">Possible Implications:</h4>';
+                    html += '<div style="background: #f8f9fa; padding: 15px; border-radius: 8px;">';
+                    
+                    data.extractedData.testResults.forEach(test => {
+                        if (test.status !== 'normal') {
+                            html += `<p style="margin-bottom: 10px;"><strong>${test.name}:</strong> `;
+                            
+                            // Add specific recommendations based on test name
+                            if (test.name.toLowerCase().includes('glucose') || test.name.toLowerCase().includes('sugar')) {
+                                html += test.status === 'slightly_high' ? 
+                                    'May indicate pre-diabetes or diabetes. Monitor diet and exercise.' :
+                                    'Requires immediate medical evaluation for diabetes management.';
+                            } else if (test.name.toLowerCase().includes('hemoglobin') || test.name.toLowerCase().includes('hb')) {
+                                html += test.status.includes('low') ? 
+                                    'May indicate anemia. Consider iron-rich foods and supplements after doctor consultation.' :
+                                    'Elevated levels need medical evaluation.';
+                            } else if (test.name.toLowerCase().includes('wbc') || test.name.toLowerCase().includes('white blood')) {
+                                html += test.status.includes('high') ? 
+                                    'May indicate infection or inflammation. Medical evaluation needed.' :
+                                    'Low levels may indicate weakened immune system.';
+                            } else if (test.name.toLowerCase().includes('creatinine')) {
+                                html += 'May indicate kidney function issues. Consult a nephrologist.';
+                            } else if (test.name.toLowerCase().includes('cholesterol') || test.name.toLowerCase().includes('ldl')) {
+                                html += 'May indicate cardiovascular risk. Lifestyle modifications and medication may be needed.';
+                            } else {
+                                html += 'Requires medical evaluation to determine cause and treatment.';
+                            }
+                            
+                            html += '</p>';
+                        }
+                    });
+                    
+                    html += '</div>';
+                } else {
+                    html += '<div style="background: #e8f5e9; padding: 15px; border-radius: 8px; border-left: 4px solid #4caf50;">';
+                    html += '<p style="color: #2e7d32; font-weight: bold; margin-bottom: 10px;">✓ All Results Normal</p>';
+                    html += '<p style="color: #666;">Your blood test results are within normal ranges. Continue maintaining a healthy lifestyle.</p>';
+                    html += '</div>';
+                    
+                    html += '<h4 style="color: #667eea; margin: 15px 0 10px 0;">Recommendations:</h4>';
+                    html += '<ul style="margin-left: 20px; line-height: 1.8;">';
+                    html += '<li>Maintain a balanced diet rich in fruits and vegetables</li>';
+                    html += '<li>Stay physically active with regular exercise</li>';
+                    html += '<li>Get adequate sleep (7-8 hours per night)</li>';
+                    html += '<li>Schedule regular health checkups</li>';
+                    html += '<li>Stay hydrated and avoid excessive alcohol</li>';
+                    html += '</ul>';
+                }
+                
+                html += '</div>';
+                
+                // Doctor Consultation Section
+                html += '<div class="result-section" style="background: #e3f2fd;">';
+                html += '<h3>👨‍⚕️ Next Steps</h3>';
+                html += '<p style="margin-bottom: 15px;">Your report has been analyzed. A doctor will review your complete case including symptoms and test results.</p>';
+                html += '<div style="background: white; padding: 15px; border-radius: 8px;">';
+                html += '<p><strong>Status:</strong> <span class="badge badge-warning">PENDING DOCTOR REVIEW</span></p>';
+                html += '<p style="margin-top: 10px; color: #666;">You will receive a notification once a doctor reviews your case and provides recommendations.</p>';
+                html += '</div>';
+                html += '</div>';
+            }
+
+            // Disclaimer
+            html += '<div class="result-section" style="background: #fff3e0; border-left: 4px solid #ff9800;">';
+            html += '<h3>⚠️ Important Disclaimer</h3>';
+            html += '<p style="color: #e65100;">This is an AI-powered analysis for informational purposes only. It is NOT a substitute for professional medical advice, diagnosis, or treatment. Always consult with a qualified healthcare provider for medical decisions.</p>';
+            html += '</div>';
+
+            document.getElementById('uploadResults').innerHTML = html;
+        }
+
+        // Drag and drop support
+        const uploadArea = document.getElementById('uploadArea');
+        
+        ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+            uploadArea.addEventListener(eventName, preventDefaults, false);
+        });
+
+        function preventDefaults(e) {
+            e.preventDefault();
+            e.stopPropagation();
+        }
+
+        ['dragenter', 'dragover'].forEach(eventName => {
+            uploadArea.addEventListener(eventName, () => {
+                uploadArea.classList.add('dragover');
+            }, false);
+        });
+
+        ['dragleave', 'drop'].forEach(eventName => {
+            uploadArea.addEventListener(eventName, () => {
+                uploadArea.classList.remove('dragover');
+            }, false);
+        });
+
+        uploadArea.addEventListener('drop', (e) => {
+            const dt = e.dataTransfer;
+            const files = dt.files;
+            
+            if (files.length > 0) {
+                document.getElementById('bloodReport').files = files;
+                handleFileSelect({ target: { files: files } });
+            }
+        }, false);
+    </script>
+</body>
+</html>
