@@ -676,6 +676,9 @@ app.post('/api/analyze', async (req, res): Promise<void> => {
       status: 'pending'
     });
     
+    // Use the consultation ID from the new database
+    const newConsultationId = consultation.id;
+    
     // Store in old DB for backward compatibility
     const oldConsultation: Consultation = {
       consultationId,
@@ -706,11 +709,11 @@ app.post('/api/analyze', async (req, res): Promise<void> => {
       await emailService.sendConsultationRequestEmail(
         doctor.email,
         patientName,
-        consultationId
+        newConsultationId
       );
     }
     
-    console.log(`✓ Consultation created: ${consultationId}`);
+    console.log(`✓ Consultation created: ${newConsultationId}`);
     
     // Return combined results
     res.json({
@@ -724,9 +727,9 @@ app.post('/api/analyze', async (req, res): Promise<void> => {
       customSeveritiesApplied: Object.keys(customSeverities).length > 0,
       customDurationsApplied: Object.keys(customDurations).length > 0,
       
-      // AI Clinical Reasoning
+      // AI Clinical Reasoning (use new consultation ID)
       clinicalReasoning: {
-        consultationId: clinicalReasoning.consultationId,
+        consultationId: newConsultationId,
         reasoningSteps: clinicalReasoning.reasoningSteps,
         possibleConditions: clinicalReasoning.possibleConditions,
         recommendedTests: clinicalReasoning.recommendedTests,
@@ -811,6 +814,348 @@ app.post('/api/upload-report', upload.single('file'), async (req, res): Promise<
     console.error('Error processing upload:', error);
     res.status(500).json({ 
       error: error.message || 'Error processing file upload' 
+    });
+  }
+});
+
+// Book online consultation endpoint
+app.post('/api/book-consultation', async (req, res) => {
+  try {
+    const { preferredDate, preferredTime, consultationType, additionalNotes } = req.body;
+
+    if (!preferredDate || !preferredTime) {
+      return res.status(400).json({ 
+        success: false, 
+        error: 'Preferred date and time are required' 
+      });
+    }
+
+    // Get current user from session (in demo, use demo patient)
+    // In production, get from actual session/JWT
+    const currentUser = {
+      id: 'demo-patient',
+      name: 'Demo Patient',
+      email: 'patient@demo.com'
+    };
+
+    // Create appointment
+    const appointmentDateTime = new Date(`${preferredDate}T${preferredTime}`);
+    const appointmentId = `APPT-${Date.now()}`;
+
+    // Get available doctors
+    const doctors = db.getAllDoctors();
+    const assignedDoctor = doctors[0] || {
+      id: 'demo-doctor',
+      name: 'Dr. Sarah Johnson',
+      email: 'doctor@demo.com',
+      specialization: 'General Medicine'
+    };
+
+    // Create appointment record using the database
+    const appointment = db.createAppointment({
+      consultationId: `CONS-${Date.now()}`,
+      patientId: currentUser.id,
+      doctorId: assignedDoctor.id,
+      scheduledDate: appointmentDateTime.toISOString(),
+      status: 'scheduled',
+      notes: additionalNotes || ''
+    });
+
+    console.log('📅 Appointment Created:', appointment);
+
+    // Send confirmation email to patient
+    await emailService.sendEmail({
+      to: currentUser.email,
+      subject: 'Consultation Booking Confirmed - MediConsult AI',
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+          <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 30px; text-align: center; border-radius: 10px 10px 0 0;">
+            <h1 style="color: white; margin: 0;">Consultation Confirmed! 🎉</h1>
+          </div>
+          
+          <div style="background: white; padding: 30px; border: 1px solid #e0e0e0; border-top: none; border-radius: 0 0 10px 10px;">
+            <p style="font-size: 16px; color: #333;">Dear ${currentUser.name},</p>
+            
+            <p style="font-size: 16px; color: #333;">Your online consultation has been successfully booked!</p>
+            
+            <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0;">
+              <h3 style="color: #667eea; margin-top: 0;">Appointment Details</h3>
+              <table style="width: 100%; border-collapse: collapse;">
+                <tr>
+                  <td style="padding: 8px 0; color: #666;"><strong>Appointment ID:</strong></td>
+                  <td style="padding: 8px 0; color: #333;">${appointmentId}</td>
+                </tr>
+                <tr>
+                  <td style="padding: 8px 0; color: #666;"><strong>Doctor:</strong></td>
+                  <td style="padding: 8px 0; color: #333;">${assignedDoctor.name}</td>
+                </tr>
+                <tr>
+                  <td style="padding: 8px 0; color: #666;"><strong>Date & Time:</strong></td>
+                  <td style="padding: 8px 0; color: #333;">${appointmentDateTime.toLocaleString('en-IN', { 
+                    weekday: 'long', 
+                    year: 'numeric', 
+                    month: 'long', 
+                    day: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit'
+                  })}</td>
+                </tr>
+                <tr>
+                  <td style="padding: 8px 0; color: #666;"><strong>Type:</strong></td>
+                  <td style="padding: 8px 0; color: #333;">${consultationType === 'video' ? '📹 Video Call' : consultationType === 'audio' ? '📞 Audio Call' : '💬 Chat'}</td>
+                </tr>
+              </table>
+            </div>
+
+            <div style="background: #e8f5e9; padding: 15px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #4caf50;">
+              <h4 style="color: #2e7d32; margin: 0 0 10px 0;">💰 Pricing</h4>
+              <p style="margin: 5px 0; color: #2e7d32;"><strong>✓ First 5 minutes:</strong> <span style="background: #4caf50; color: white; padding: 2px 8px; border-radius: 4px; font-weight: bold;">FREE</span></p>
+              <p style="margin: 5px 0; color: #2e7d32;"><strong>✓ Every additional 5 minutes:</strong> ₹100</p>
+              <p style="margin: 10px 0 0 0; color: #2e7d32; font-size: 0.9em; font-style: italic;">You'll only be charged for the time you use beyond the first 5 minutes.</p>
+            </div>
+
+            ${additionalNotes ? `
+              <div style="background: #fff3e0; padding: 15px; border-radius: 8px; margin: 20px 0;">
+                <strong style="color: #f57c00;">Your Notes:</strong>
+                <p style="margin: 10px 0 0 0; color: #333;">${additionalNotes}</p>
+              </div>
+            ` : ''}
+
+            <div style="background: #e3f2fd; padding: 15px; border-radius: 8px; margin: 20px 0;">
+              <p style="margin: 0; color: #1976d2;">
+                <strong>📧 Meeting Link:</strong> You will receive the video call link 15 minutes before your appointment.
+              </p>
+            </div>
+
+            <div style="background: #fff3e0; padding: 15px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #ff9800;">
+              <p style="margin: 0; color: #e65100;">
+                <strong>⚠️ Important:</strong> Please be available 5 minutes before your scheduled time. Have your medical history and current medications list ready.
+              </p>
+            </div>
+
+            <div style="text-align: center; margin-top: 30px;">
+              <a href="http://localhost:3000/index.html" style="display: inline-block; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 15px 40px; text-decoration: none; border-radius: 8px; font-weight: bold;">View Dashboard</a>
+            </div>
+
+            <p style="margin-top: 30px; color: #666; font-size: 14px;">
+              If you need to reschedule or cancel, please contact us at least 2 hours before your appointment.
+            </p>
+
+            <p style="margin-top: 20px; color: #333;">
+              Best regards,<br>
+              <strong>MediConsult AI Team</strong>
+            </p>
+          </div>
+        </div>
+      `,
+      text: `Consultation Confirmed! Appointment ID: ${appointmentId}, Doctor: ${assignedDoctor.name}, Date: ${appointmentDateTime.toLocaleString()}`
+    });
+
+    // Send notification to doctor
+    await emailService.sendEmail({
+      to: assignedDoctor.email,
+      subject: 'New Consultation Appointment - MediConsult AI',
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+          <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 30px; text-align: center; border-radius: 10px 10px 0 0;">
+            <h1 style="color: white; margin: 0;">New Appointment Scheduled 📅</h1>
+          </div>
+          
+          <div style="background: white; padding: 30px; border: 1px solid #e0e0e0; border-top: none; border-radius: 0 0 10px 10px;">
+            <p style="font-size: 16px; color: #333;">Dear Dr. ${assignedDoctor.name},</p>
+            
+            <p style="font-size: 16px; color: #333;">A new consultation has been scheduled with you.</p>
+            
+            <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0;">
+              <h3 style="color: #667eea; margin-top: 0;">Patient Details</h3>
+              <table style="width: 100%; border-collapse: collapse;">
+                <tr>
+                  <td style="padding: 8px 0; color: #666;"><strong>Patient Name:</strong></td>
+                  <td style="padding: 8px 0; color: #333;">${currentUser.name}</td>
+                </tr>
+                <tr>
+                  <td style="padding: 8px 0; color: #666;"><strong>Appointment ID:</strong></td>
+                  <td style="padding: 8px 0; color: #333;">${appointmentId}</td>
+                </tr>
+                <tr>
+                  <td style="padding: 8px 0; color: #666;"><strong>Date & Time:</strong></td>
+                  <td style="padding: 8px 0; color: #333;">${appointmentDateTime.toLocaleString('en-IN', { 
+                    weekday: 'long', 
+                    year: 'numeric', 
+                    month: 'long', 
+                    day: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit'
+                  })}</td>
+                </tr>
+                <tr>
+                  <td style="padding: 8px 0; color: #666;"><strong>Type:</strong></td>
+                  <td style="padding: 8px 0; color: #333;">${consultationType === 'video' ? '📹 Video Call' : consultationType === 'audio' ? '📞 Audio Call' : '💬 Chat'}</td>
+                </tr>
+              </table>
+            </div>
+
+            ${additionalNotes ? `
+              <div style="background: #e3f2fd; padding: 15px; border-radius: 8px; margin: 20px 0;">
+                <strong style="color: #1976d2;">Patient's Notes:</strong>
+                <p style="margin: 10px 0 0 0; color: #333;">${additionalNotes}</p>
+              </div>
+            ` : ''}
+
+            <div style="text-align: center; margin-top: 30px;">
+              <a href="http://localhost:3000/doctor-dashboard.html" style="display: inline-block; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 15px 40px; text-decoration: none; border-radius: 8px; font-weight: bold;">View Dashboard</a>
+            </div>
+
+            <p style="margin-top: 30px; color: #333;">
+              Best regards,<br>
+              <strong>MediConsult AI Team</strong>
+            </p>
+          </div>
+        </div>
+      `,
+      text: `New appointment with ${currentUser.name} on ${appointmentDateTime.toLocaleString()}`
+    });
+
+    return res.json({ 
+      success: true, 
+      appointmentId,
+      message: 'Consultation booked successfully. Confirmation email sent.',
+      appointment: {
+        id: appointmentId,
+        doctorName: assignedDoctor.name,
+        appointmentDate: appointmentDateTime.toISOString(),
+        consultationType
+      }
+    });
+
+  } catch (error: any) {
+    console.error('Error booking consultation:', error);
+    return res.status(500).json({ 
+      success: false, 
+      error: error.message || 'Error booking consultation' 
+    });
+  }
+});
+
+// Send report to doctor endpoint
+app.post('/api/send-report-to-doctor', async (req, res): Promise<void> => {
+  try {
+    const { consultationId, doctorEmail } = req.body;
+
+    if (!consultationId || !doctorEmail) {
+      res.status(400).json({ 
+        success: false, 
+        error: 'Missing required fields' 
+      });
+      return;
+    }
+
+    const consultation = db.getConsultationById(consultationId);
+    if (!consultation) {
+      res.status(404).json({ 
+        success: false, 
+        error: 'Consultation not found' 
+      });
+      return;
+    }
+
+    // Send email to doctor with report
+    await emailService.sendEmail({
+      to: doctorEmail,
+      subject: `Medical Report - ${consultation.patientName} (${consultationId})`,
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+          <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 30px; text-align: center; border-radius: 10px 10px 0 0;">
+            <h1 style="color: white; margin: 0;">📋 Patient Medical Report</h1>
+          </div>
+          
+          <div style="background: white; padding: 30px; border: 1px solid #e0e0e0; border-top: none; border-radius: 0 0 10px 10px;">
+            <p style="font-size: 16px; color: #333;">Dear Doctor,</p>
+            
+            <p style="font-size: 16px; color: #333;">You have received a medical report for review and prescription.</p>
+            
+            <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0;">
+              <h3 style="color: #667eea; margin-top: 0;">Patient Information</h3>
+              <p><strong>Name:</strong> ${consultation.patientName}</p>
+              <p><strong>Email:</strong> ${consultation.patientEmail}</p>
+              <p><strong>Consultation ID:</strong> ${consultationId}</p>
+              <p><strong>Date:</strong> ${new Date(consultation.createdAt).toLocaleString()}</p>
+            </div>
+
+            <div style="background: #fff3e0; padding: 20px; border-radius: 8px; margin: 20px 0;">
+              <h3 style="color: #f57c00; margin-top: 0;">Symptoms</h3>
+              <p>${consultation.symptoms.join(', ')}</p>
+            </div>
+
+            <div style="background: #e3f2fd; padding: 20px; border-radius: 8px; margin: 20px 0;">
+              <h3 style="color: #1976d2; margin-top: 0;">AI Analysis</h3>
+              <p><strong>Diagnosis:</strong> ${consultation.aiDiagnosis}</p>
+              <p><strong>Urgency:</strong> ${consultation.urgency.toUpperCase()}</p>
+            </div>
+
+            <div style="text-align: center; margin-top: 30px;">
+              <a href="http://localhost:3000/doctor-dashboard.html" style="display: inline-block; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 15px 40px; text-decoration: none; border-radius: 8px; font-weight: bold;">Review & Prescribe</a>
+            </div>
+
+            <div style="background: #fff3e0; padding: 15px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #ff9800;">
+              <p style="margin: 0; color: #e65100;">
+                <strong>⚠️ Action Required:</strong> Please review this case and provide your prescription. The patient is waiting for your response.
+              </p>
+            </div>
+
+            <p style="margin-top: 30px; color: #333;">
+              Best regards,<br>
+              <strong>MediConsult AI Team</strong>
+            </p>
+          </div>
+        </div>
+      `,
+      text: `Medical Report for ${consultation.patientName}. Consultation ID: ${consultationId}`
+    });
+
+    // Update consultation with doctor email
+    db.updateConsultation(consultationId, {
+      doctorEmail: doctorEmail
+    });
+
+    console.log(`✓ Report sent to doctor: ${doctorEmail} for consultation: ${consultationId}`);
+
+    res.json({ 
+      success: true, 
+      message: 'Report sent to doctor successfully' 
+    });
+  } catch (error: any) {
+    console.error('Error sending report to doctor:', error);
+    res.status(500).json({ 
+      success: false, 
+      error: error.message || 'Error sending report' 
+    });
+  }
+});
+
+// Get single consultation details
+app.get('/api/consultations/:id', async (req, res): Promise<void> => {
+  try {
+    const { id } = req.params;
+    const consultation = db.getConsultationById(id);
+
+    if (!consultation) {
+      res.status(404).json({ 
+        success: false, 
+        error: 'Consultation not found' 
+      });
+      return;
+    }
+
+    res.json({
+      success: true,
+      consultation
+    });
+  } catch (error: any) {
+    console.error('Error fetching consultation:', error);
+    res.status(500).json({ 
+      success: false, 
+      error: error.message 
     });
   }
 });

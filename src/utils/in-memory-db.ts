@@ -19,6 +19,7 @@ export interface Consultation {
     patientEmail: string;
     doctorId?: string;
     doctorName?: string;
+    doctorEmail?: string;
     symptoms: string[];
     aiDiagnosis?: string;
     aiRecommendations?: any;

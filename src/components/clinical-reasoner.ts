@@ -311,27 +311,37 @@ function generateTestRecommendations(
   const tests: RecommendedTest[] = [];
   const symptomNames = symptoms.map(s => s.name.toLowerCase());
   
-  // Complete Blood Count - almost always useful
-  tests.push({
-    testName: 'Complete Blood Count (CBC)',
-    loincCode: '58410-2',
-    rationale: 'Screens for infection, anemia, and blood disorders. Essential baseline test.',
-    priority: 'high',
-    estimatedCost: '₹300-500'
-  });
+  // Determine if tests are needed based on symptom severity and type
+  const maxSeverity = Math.max(...symptoms.map(s => s.severity));
+  const hasHighSeverity = maxSeverity >= 8;
+  const hasModerateSeverity = maxSeverity >= 6;
   
-  // C-Reactive Protein for inflammation
-  if (symptoms.some(s => s.severity >= 6)) {
-    tests.push({
-      testName: 'C-Reactive Protein (CRP)',
-      loincCode: '1988-5',
-      rationale: 'Measures inflammation level. Elevated in infections and inflammatory conditions.',
-      priority: 'medium',
-      estimatedCost: '₹200-400'
-    });
+  // List of general/common symptoms that typically don't need blood tests
+  const generalSymptoms = [
+    'headache', 'mild headache', 'tension headache', 'head pain',
+    'cough', 'mild cough', 'dry cough',
+    'sore throat', 'throat pain',
+    'runny nose', 'stuffy nose', 'nasal congestion',
+    'sneezing', 'cold symptoms',
+    'fatigue', 'tiredness', 'weakness',
+    'muscle pain', 'body aches', 'back pain'
+  ];
+  
+  // Check if symptoms are only general/common ones with low-moderate severity
+  const allSymptomsAreGeneral = symptoms.every(s => 
+    generalSymptoms.some(gs => s.name.toLowerCase().includes(gs))
+  );
+  
+  const isSimpleCase = allSymptomsAreGeneral && maxSeverity < 7 && symptoms.length <= 2;
+  
+  // If it's a simple case with general symptoms, don't recommend blood tests
+  if (isSimpleCase) {
+    return []; // No blood tests needed - recommend doctor consultation instead
   }
   
-  // Chest pain specific tests
+  // CRITICAL CONDITIONS - Always require immediate tests
+  
+  // Chest pain - always requires immediate cardiac tests
   if (symptomNames.includes('chest pain')) {
     tests.push({
       testName: 'Troponin I',
@@ -348,34 +358,171 @@ function generateTestRecommendations(
       priority: 'high',
       estimatedCost: '₹150-300'
     });
-  }
-  
-  // Fever/infection tests
-  if (symptomNames.includes('fever')) {
+    
     tests.push({
-      testName: 'Blood Culture',
-      loincCode: '600-7',
-      rationale: 'Identifies bacterial infections in bloodstream.',
-      priority: 'medium',
-      estimatedCost: '₹800-1200'
+      testName: 'Complete Blood Count (CBC)',
+      loincCode: '58410-2',
+      rationale: 'Screens for infection, anemia, and blood disorders.',
+      priority: 'high',
+      estimatedCost: '₹300-500'
     });
   }
   
-  // Metabolic panel
-  tests.push({
-    testName: 'Basic Metabolic Panel (BMP)',
-    loincCode: '51990-0',
-    rationale: 'Assesses kidney function, electrolytes, and blood sugar. Important baseline.',
-    priority: 'medium',
-    estimatedCost: '₹400-600'
-  });
+  // High fever (especially with high severity) - infection workup
+  if ((symptomNames.includes('fever') || symptomNames.includes('high fever')) && hasModerateSeverity) {
+    tests.push({
+      testName: 'Complete Blood Count (CBC)',
+      loincCode: '58410-2',
+      rationale: 'Essential for detecting infections, anemia, and blood disorders.',
+      priority: 'high',
+      estimatedCost: '₹300-500'
+    });
+    
+    tests.push({
+      testName: 'C-Reactive Protein (CRP)',
+      loincCode: '1988-5',
+      rationale: 'Measures inflammation level. Elevated in infections and inflammatory conditions.',
+      priority: 'high',
+      estimatedCost: '₹200-400'
+    });
+    
+    if (hasHighSeverity) {
+      tests.push({
+        testName: 'Blood Culture',
+        loincCode: '600-7',
+        rationale: 'Identifies bacterial infections in bloodstream.',
+        priority: 'high',
+        estimatedCost: '₹800-1200'
+      });
+    }
+  }
   
-  // Liver function if GI symptoms
-  if (symptomNames.includes('nausea') || symptomNames.includes('vomiting') || symptomNames.includes('abdominal pain')) {
+  // Jaundice or liver-related symptoms - always needs liver workup
+  if (symptomNames.includes('jaundice') || symptomNames.includes('yellow skin') || 
+      symptomNames.includes('yellow eyes') || symptomNames.includes('dark urine')) {
     tests.push({
       testName: 'Liver Function Tests (LFT)',
       loincCode: '24325-3',
-      rationale: 'Evaluates liver health. Important for GI symptoms.',
+      rationale: 'Essential for evaluating liver health and jaundice causes.',
+      priority: 'high',
+      estimatedCost: '₹500-800'
+    });
+    
+    tests.push({
+      testName: 'Complete Blood Count (CBC)',
+      loincCode: '58410-2',
+      rationale: 'Screens for anemia and blood disorders.',
+      priority: 'high',
+      estimatedCost: '₹300-500'
+    });
+    
+    tests.push({
+      testName: 'Bilirubin (Total and Direct)',
+      loincCode: '1975-2',
+      rationale: 'Measures bilirubin levels to determine jaundice severity and type.',
+      priority: 'high',
+      estimatedCost: '₹200-400'
+    });
+  }
+  
+  // Diabetes-related symptoms - blood sugar tests
+  if (symptomNames.includes('excessive thirst') || symptomNames.includes('frequent urination') ||
+      symptomNames.includes('unexplained weight loss')) {
+    tests.push({
+      testName: 'Fasting Blood Glucose',
+      loincCode: '1558-6',
+      rationale: 'Screens for diabetes and blood sugar abnormalities.',
+      priority: 'high',
+      estimatedCost: '₹100-200'
+    });
+    
+    tests.push({
+      testName: 'HbA1c',
+      loincCode: '4548-4',
+      rationale: 'Measures average blood sugar over 3 months. Confirms diabetes.',
+      priority: 'high',
+      estimatedCost: '₹400-600'
+    });
+  }
+  
+  // Severe dengue/malaria symptoms - tropical disease workup
+  if ((symptomNames.includes('dengue') || symptomNames.includes('malaria')) || 
+      (symptomNames.includes('high fever') && symptomNames.includes('body aches') && hasHighSeverity)) {
+    tests.push({
+      testName: 'Complete Blood Count (CBC)',
+      loincCode: '58410-2',
+      rationale: 'Critical for detecting low platelet count in dengue and anemia in malaria.',
+      priority: 'high',
+      estimatedCost: '₹300-500'
+    });
+    
+    tests.push({
+      testName: 'Dengue NS1 Antigen / Malaria Rapid Test',
+      loincCode: '92253-4',
+      rationale: 'Confirms dengue or malaria infection.',
+      priority: 'high',
+      estimatedCost: '₹400-800'
+    });
+  }
+  
+  // Tuberculosis symptoms - TB workup
+  if (symptomNames.includes('tuberculosis') || symptomNames.includes('coughing blood') ||
+      (symptomNames.includes('persistent cough') && symptomNames.includes('night sweats') && symptomNames.includes('weight loss'))) {
+    tests.push({
+      testName: 'Chest X-Ray',
+      loincCode: '30746-2',
+      rationale: 'Detects lung abnormalities and TB infection.',
+      priority: 'high',
+      estimatedCost: '₹300-500'
+    });
+    
+    tests.push({
+      testName: 'Sputum Test for TB',
+      loincCode: '11545-1',
+      rationale: 'Confirms tuberculosis bacteria in sputum.',
+      priority: 'high',
+      estimatedCost: '₹500-800'
+    });
+  }
+  
+  // Severe or multiple complex symptoms - comprehensive workup
+  if ((hasHighSeverity && symptoms.length >= 2) || symptoms.length >= 4) {
+    if (!tests.some(t => t.testName.includes('CBC'))) {
+      tests.push({
+        testName: 'Complete Blood Count (CBC)',
+        loincCode: '58410-2',
+        rationale: 'Comprehensive screening for infections, anemia, and blood disorders.',
+        priority: 'high',
+        estimatedCost: '₹300-500'
+      });
+    }
+    
+    tests.push({
+      testName: 'Basic Metabolic Panel (BMP)',
+      loincCode: '51990-0',
+      rationale: 'Assesses kidney function, electrolytes, and blood sugar.',
+      priority: 'medium',
+      estimatedCost: '₹400-600'
+    });
+  }
+  
+  // Severe GI symptoms with high severity - GI workup
+  if ((symptomNames.includes('vomiting') || symptomNames.includes('severe abdominal pain') || 
+       symptomNames.includes('blood in stool')) && hasModerateSeverity) {
+    if (!tests.some(t => t.testName.includes('CBC'))) {
+      tests.push({
+        testName: 'Complete Blood Count (CBC)',
+        loincCode: '58410-2',
+        rationale: 'Screens for infection and blood loss.',
+        priority: 'high',
+        estimatedCost: '₹300-500'
+      });
+    }
+    
+    tests.push({
+      testName: 'Liver Function Tests (LFT)',
+      loincCode: '24325-3',
+      rationale: 'Evaluates liver health. Important for severe GI symptoms.',
       priority: 'medium',
       estimatedCost: '₹500-800'
     });
