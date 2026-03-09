@@ -19,8 +19,7 @@
 # Dependencies (will be installed on server)
 node_modules/
 
-# Build files
-dist/
+# Build files (dist/ is needed for production!)
 build/
 *.log
 

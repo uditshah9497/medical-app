@@ -65,7 +65,7 @@ main
 
 **Build Command:**
 ```
-npm install
+npm install && npm run build
 ```
 
 **Start Command:**

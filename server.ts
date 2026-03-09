@@ -1132,7 +1132,7 @@ app.get('/', (req, res) => {
 });
 
 // Start server
-app.listen(PORT, () => {
+app.listen(PORT, '0.0.0.0', () => {
   console.log('\n' + '='.repeat(70));
   console.log('🏥 AI MEDICAL CONSULTATION PLATFORM - LOCAL SERVER');
   console.log('='.repeat(70));

@@ -1,0 +1,37 @@
+═══════════════════════════════════════════════════════════
+  DEPLOY TO AWS - QUICK STEPS (5 MINUTES)
+═══════════════════════════════════════════════════════════
+
+FILE TO UPLOAD: aws-deployment.zip (in your project folder)
+
+STEP 1: Upload to AWS
+─────────────────────
+1. Go to: https://ap-southeast-2.console.aws.amazon.com/elasticbeanstalk
+2. Click your environment: medical-consultation-ap-env
+3. Click "Upload and deploy" button
+4. Choose file: aws-deployment.zip
+5. Click "Deploy"
+
+STEP 2: Set Environment Variables
+──────────────────────────────────
+1. Click "Configuration" (left sidebar)
+2. Find "Software" section → Click "Edit"
+3. Scroll to "Environment properties"
+4. Add these:
+   
+   PORT = 8080
+   NODE_ENV = production
+   EMAIL_USER = ushah9497@gmail.com
+   EMAIL_PASS = (your Gmail app password)
+
+5. Click "Apply"
+
+STEP 3: Wait & Test
+───────────────────
+1. Wait 5-10 minutes for deployment
+2. Open: http://medical-consultation-ap-env.eba-dm72n26j.ap-southeast-2.elasticbeanstalk.com
+3. Done! ✓
+
+═══════════════════════════════════════════════════════════
+  WHAT'S FIXED: No more 502 error! App is compiled and ready.
+═══════════════════════════════════════════════════════════
