@@ -1,5 +1,7 @@
-// Mock email service for demo
-// In production, integrate with AWS SES or similar service
+// Email service with real email sending support
+// Supports both demo mode (console logs) and production mode (real emails via SMTP)
+
+import nodemailer from 'nodemailer';
 
 export interface EmailOptions {
     to: string;
@@ -10,21 +12,77 @@ export interface EmailOptions {
 
 class EmailService {
     private emailLog: Array<{ timestamp: string; email: EmailOptions }> = [];
+    private transporter: any = null;
+    private isRealEmailEnabled: boolean = false;
+
+    constructor() {
+        this.initializeEmailService();
+    }
+
+    private initializeEmailService() {
+        // Check if email credentials are provided in environment variables
+        const emailUser = process.env.EMAIL_USER;
+        const emailPass = process.env.EMAIL_PASS;
+
+        if (emailUser && emailPass) {
+            try {
+                // Create transporter for Gmail SMTP
+                this.transporter = nodemailer.createTransport({
+                    service: 'gmail',
+                    auth: {
+                        user: emailUser,
+                        pass: emailPass
+                    }
+                });
+
+                this.isRealEmailEnabled = true;
+                console.log('✅ Real email sending enabled with:', emailUser);
+            } catch (error) {
+                console.error('❌ Failed to initialize email service:', error);
+                console.log('📝 Falling back to console logging mode');
+                this.isRealEmailEnabled = false;
+            }
+        } else {
+            console.log('📝 Email service in DEMO MODE (console logging only)');
+            console.log('💡 To enable real emails, set EMAIL_USER and EMAIL_PASS environment variables');
+        }
+    }
 
     async sendEmail(options: EmailOptions): Promise<boolean> {
-        // Mock email sending - log to console and store in memory
-        console.log('\n📧 EMAIL SENT:');
+        // Always log to console for debugging
+        console.log('\n📧 EMAIL:');
         console.log('To:', options.to);
         console.log('Subject:', options.subject);
-        console.log('Body:', options.text || options.html);
         console.log('---\n');
 
+        // Store in memory log
         this.emailLog.push({
             timestamp: new Date().toISOString(),
             email: options
         });
 
-        return true;
+        // Send real email if enabled
+        if (this.isRealEmailEnabled && this.transporter) {
+            try {
+                const info = await this.transporter.sendMail({
+                    from: `"MediConsult AI" <${process.env.EMAIL_USER}>`,
+                    to: options.to,
+                    subject: options.subject,
+                    text: options.text || '',
+                    html: options.html
+                });
+
+                console.log('✅ Real email sent successfully! Message ID:', info.messageId);
+                return true;
+            } catch (error: any) {
+                console.error('❌ Failed to send real email:', error.message);
+                console.log('📝 Email content logged to console instead');
+                return false;
+            }
+        } else {
+            console.log('📝 Demo mode: Email logged to console (not actually sent)');
+            return true;
+        }
     }
 
     async sendRegistrationEmail(email: string, name: string): Promise<boolean> {

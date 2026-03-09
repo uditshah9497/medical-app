@@ -3,6 +3,9 @@
  * Serves the UI and handles symptom analysis API requests
  */
 
+// Load environment variables from .env file
+import 'dotenv/config';
+
 import express from 'express';
 import path from 'path';
 import multer from 'multer';
