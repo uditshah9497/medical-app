@@ -5,7 +5,8 @@
   "main": "index.js",
   "scripts": {
     "build": "tsc",
-    "start": "ts-node server.ts",
+    "start": "node dist/server.js",
+    "dev": "ts-node server.ts",
     "test": "jest",
     "test:watch": "jest --watch",
     "cdk": "cdk",
