@@ -17,7 +17,7 @@ import { emailService } from './src/utils/email-service';
 import { generateHTMLReport, generateTextReport } from './src/utils/report-generator';
 
 const app = express();
-const PORT = 3000;
+const PORT = process.env.PORT || 3000;
 
 // In-memory database for demo (replace with DynamoDB in production)
 interface Patient {
