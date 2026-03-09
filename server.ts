@@ -496,53 +496,6 @@ app.post('/api/auth', async (req, res): Promise<void> => {
   }
 });
 
-// API endpoint to book doctor consultation
-app.post('/api/book-consultation', async (req, res): Promise<void> => {
-  try {
-    const { consultationId, patientId, preferredDate, preferredTime } = req.body;
-    
-    if (!consultationId || !patientId) {
-      res.status(400).json({ error: 'Missing required fields' });
-      return;
-    }
-
-    const consultation = consultationsDB.get(consultationId);
-    if (!consultation) {
-      res.status(404).json({ error: 'Consultation not found' });
-      return;
-    }
-
-    const patient = patientsDB.get(patientId);
-    if (!patient) {
-      res.status(404).json({ error: 'Patient not found' });
-      return;
-    }
-
-    // Update consultation with booking info
-    consultation.doctorConsultationBooked = true;
-    consultation.doctorConsultationDate = `${preferredDate} ${preferredTime}`;
-    consultationsDB.set(consultationId, consultation);
-
-    console.log(`✓ Doctor consultation booked for ${patient.name}`);
-    console.log(`  Date/Time: ${preferredDate} ${preferredTime}`);
-    console.log(`  Consultation ID: ${consultationId}`);
-
-    res.json({
-      success: true,
-      message: 'Doctor consultation booked successfully',
-      bookingDetails: {
-        consultationId,
-        patientName: patient.name,
-        dateTime: `${preferredDate} ${preferredTime}`,
-        status: 'confirmed'
-      }
-    });
-  } catch (error: any) {
-    console.error('Error booking consultation:', error);
-    res.status(500).json({ error: error.message || 'Error booking consultation' });
-  }
-});
-
 // API endpoint to generate and download patient report
 app.post('/api/generate-report', async (req, res): Promise<void> => {
   try {
