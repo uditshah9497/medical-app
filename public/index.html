@@ -1627,6 +1627,16 @@
                 return;
             }
 
+            // Get logged-in user information
+            const userStr = localStorage.getItem('user');
+            const user = userStr ? JSON.parse(userStr) : null;
+
+            if (!user) {
+                alert('Please login first to book a consultation');
+                window.location.href = '/login.html';
+                return;
+            }
+
             try {
                 const response = await fetch('/api/book-consultation', {
                     method: 'POST',
@@ -1637,7 +1647,10 @@
                         preferredDate,
                         preferredTime,
                         consultationType,
-                        additionalNotes
+                        additionalNotes,
+                        userId: user.id,
+                        userName: user.name,
+                        userEmail: user.email
                     })
                 });
 

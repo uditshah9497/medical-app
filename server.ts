@@ -774,7 +774,7 @@ app.post('/api/upload-report', upload.single('file'), async (req, res): Promise<
 // Book online consultation endpoint
 app.post('/api/book-consultation', async (req, res) => {
   try {
-    const { preferredDate, preferredTime, consultationType, additionalNotes } = req.body;
+    const { preferredDate, preferredTime, consultationType, additionalNotes, userId, userName, userEmail } = req.body;
 
     if (!preferredDate || !preferredTime) {
       return res.status(400).json({ 
@@ -783,12 +783,11 @@ app.post('/api/book-consultation', async (req, res) => {
       });
     }
 
-    // Get current user from session (in demo, use demo patient)
-    // In production, get from actual session/JWT
+    // Get current user from request body (sent from frontend)
     const currentUser = {
-      id: 'demo-patient',
-      name: 'Demo Patient',
-      email: 'patient@demo.com'
+      id: userId || 'demo-patient',
+      name: userName || 'Demo Patient',
+      email: userEmail || 'patient@demo.com'
     };
 
     // Create appointment
@@ -815,6 +814,7 @@ app.post('/api/book-consultation', async (req, res) => {
     });
 
     console.log('📅 Appointment Created:', appointment);
+    console.log('📧 Sending confirmation email to:', currentUser.email);
 
     // Send confirmation email to patient
     await emailService.sendEmail({
